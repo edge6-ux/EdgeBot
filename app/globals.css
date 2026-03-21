@@ -36,6 +36,11 @@ body {
   font-family: var(--font-syne), "Syne", system-ui, sans-serif;
 }
 
+/* Welcome / empty-state headline only */
+.font-welcome {
+  font-family: var(--font-fraunces), "Fraunces", Georgia, "Times New Roman", serif;
+}
+
 /* Ultra-thin scrollbar */
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }

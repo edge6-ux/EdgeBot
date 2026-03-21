@@ -107,14 +107,14 @@ function OrbBackground() {
 
 function EmptyState({ greeting }: { greeting: string }) {
   return (
-    <div className="flex flex-col items-center justify-center h-full text-center px-4 select-none">
+    <div className="flex flex-col items-center justify-center h-full min-h-0 text-center px-4 select-none translate-y-[min(11vh,6.5rem)]">
       <p
-        className="gradient-text relative font-display font-extrabold tracking-tight leading-none text-center"
+        className="gradient-text relative font-welcome font-bold tracking-tight leading-tight text-center"
         style={{
           zIndex: 10,
           fontSize: "clamp(2.4rem, 7vw, 4.5rem)",
           filter: "drop-shadow(0 0 30px rgba(99, 102, 241, 0.4))",
-          maxWidth: "16ch",
+          maxWidth: "18ch",
         }}
       >
         {greeting}
