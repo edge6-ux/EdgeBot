@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
+import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
@@ -12,14 +13,13 @@ import type { DBMessage } from "@/lib/supabase/types";
 function TypingIndicator() {
   return (
     <div className="message-enter flex items-start mb-5">
-      <div
-        className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mr-3 mt-0.5"
-        style={{
-          background: "linear-gradient(135deg, #6366f1, #8b5cf6, #22d3ee)",
-          boxShadow: "0 0 14px rgba(99, 102, 241, 0.45)",
-        }}
-      >
-        <span className="text-[11px] font-black text-white tracking-tight">E</span>
+      <div className="flex-shrink-0 mr-3 mt-0.5 flex h-8 min-w-[2.75rem] items-center justify-center self-start">
+        <span
+          className="gradient-text font-display font-bold tracking-tight leading-none whitespace-nowrap"
+          style={{ fontSize: "0.7rem" }}
+        >
+          Edge
+        </span>
       </div>
       <div
         className="px-4 py-3 rounded-2xl rounded-tl-sm"
@@ -50,21 +50,128 @@ function TypingIndicator() {
   );
 }
 
-const GREETINGS = [
-  (name?: string) => name ? `Yo ${name}, what's good?` : "Yo, what's good?",
-  (name?: string) => name ? `What's going on, ${name}?` : "What's going on?",
-  (name?: string) => name ? `Talk to me, ${name}.` : "Talk to me.",
-  (name?: string) => "What's the move?",
-  (name?: string) => "What are we getting into today?",
-  (name?: string) => name ? `What's on your mind, ${name}?` : "What's on your mind?",
-  (name?: string) => "I'm all ears.",
-  (name?: string) => name ? `What's poppin', ${name}?` : "What's poppin'?",
-  (name?: string) => "Hit me.",
-  (name?: string) => "What we working with?",
+type StarterAccent = "indigo" | "violet" | "cyan" | "mixed";
+
+const CONVERSATION_STARTERS: ReadonlyArray<{
+  send: string;
+  title: string;
+  hint: string;
+  wide: boolean;
+  accent: StarterAccent;
+  icon: "spark" | "compass" | "bolt" | "chat";
+}> = [
+  {
+    send: "Ask me anything",
+    title: "Ask me anything",
+    hint: "Curiosity first — no topic too random.",
+    wide: true,
+    accent: "mixed",
+    icon: "spark",
+  },
+  {
+    send: "I need some advice",
+    title: "I need advice",
+    hint: "Straight talk, no fluff.",
+    wide: false,
+    accent: "indigo",
+    icon: "compass",
+  },
+  {
+    send: "Let's brainstorm something",
+    title: "Brainstorm",
+    hint: "Ideas, angles, what-ifs.",
+    wide: false,
+    accent: "violet",
+    icon: "bolt",
+  },
+  {
+    send: "Just wanna talk",
+    title: "Just talk",
+    hint: "No agenda — I'm here.",
+    wide: true,
+    accent: "cyan",
+    icon: "chat",
+  },
 ];
 
-function pickGreeting(name?: string): string {
-  return GREETINGS[Math.floor(Math.random() * GREETINGS.length)](name);
+function StarterIcon({ name }: { name: (typeof CONVERSATION_STARTERS)[number]["icon"] }) {
+  const className = "h-5 w-5 shrink-0 opacity-80 transition-opacity duration-300 group-hover:opacity-100";
+  switch (name) {
+    case "spark":
+      return (
+        <svg className={`${className} text-indigo-300`} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <path
+            fillRule="evenodd"
+            d="M9 4.5a.75.75 0 0 1 .721.544l.813 2.846a3.75 3.75 0 0 0 2.576 2.576l2.846.813a.75.75 0 0 1 0 1.442l-2.846.813a3.75 3.75 0 0 0-2.576 2.576l-.813 2.846a.75.75 0 0 1-1.442 0l-.813-2.846a3.75 3.75 0 0 0-2.576-2.576l-2.846-.813a.75.75 0 0 1 0-1.442l2.846-.813a3.75 3.75 0 0 0 2.576-2.576l.813-2.846A.75.75 0 0 1 9 4.5ZM18.259 8.715a.75.75 0 0 1 .53.918l-.259 1.035a3.375 3.375 0 0 0 2.455 2.456l1.036.259a.75.75 0 0 1 0 1.442l-1.035.259a3.375 3.375 0 0 0-2.456 2.456l-.259 1.035a.75.75 0 0 1-1.442 0l-.259-1.035a3.375 3.375 0 0 0-2.456-2.456l-1.035-.259a.75.75 0 0 1 0-1.442l1.035-.259a3.375 3.375 0 0 0 2.456-2.456l.259-1.035a.75.75 0 0 1 .972-.53Z"
+            clipRule="evenodd"
+          />
+        </svg>
+      );
+    case "compass":
+      return (
+        <svg
+          className={`${className} text-indigo-300`}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <circle cx="12" cy="12" r="9" />
+          <path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z" />
+        </svg>
+      );
+    case "bolt":
+      return (
+        <svg className={`${className} text-violet-300`} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <path
+            fillRule="evenodd"
+            d="M14.615 1.595a.75.75 0 0 1 .359.852L12.982 9.75h7.268a.75.75 0 0 1 .548 1.262l-10.25 10.25a.75.75 0 0 1-1.272-.41l1.517-7.391H4.42a.75.75 0 0 1-.548-1.262l10.25-10.25a.75.75 0 0 1 .493-.104Z"
+            clipRule="evenodd"
+          />
+        </svg>
+      );
+    case "chat":
+      return (
+        <svg
+          className={`${className} text-cyan-300`}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <path d="M7.5 8.25h9m-9 3H12m-4.5 3H15M21 12a9 9 0 01-9 9H9l-4.5 3v-3.086a9 9 0 01-2.565-5.565A9 9 0 0112 3a9 9 0 019 9z" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
+function accentBarStyle(accent: StarterAccent): CSSProperties {
+  switch (accent) {
+    case "indigo":
+      return { background: "linear-gradient(180deg, #818cf8, #6366f1)" };
+    case "violet":
+      return { background: "linear-gradient(180deg, #c4b5fd, #8b5cf6)" };
+    case "cyan":
+      return { background: "linear-gradient(180deg, #67e8f9, #22d3ee)" };
+    default:
+      return { background: "linear-gradient(180deg, #a5b4fc, #22d3ee)" };
+  }
+}
+
+function getTimeGreeting(): string {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 12) return "Good morning.";
+  if (h >= 12 && h < 17) return "Good afternoon.";
+  if (h >= 17 && h < 22) return "Good evening.";
+  return "Hey — late night? I'm here.";
 }
 
 function OrbBackground() {
@@ -105,20 +212,73 @@ function OrbBackground() {
   );
 }
 
-function EmptyState({ greeting }: { greeting: string }) {
+function WelcomeScreen({ onStarter }: { onStarter: (text: string) => void }) {
+  const greeting = getTimeGreeting();
   return (
-    <div className="flex flex-col items-center justify-center h-full min-h-0 text-center px-4 select-none translate-y-[min(11vh,6.5rem)]">
-      <p
-        className="gradient-text relative font-welcome font-bold tracking-tight leading-tight text-center"
+    <div className="flex flex-col items-center justify-center h-full min-h-0 px-4 sm:px-6 select-none translate-y-[min(6vh,4rem)] z-10 w-full max-w-2xl mx-auto">
+      <h2
+        className="gradient-text font-display font-bold tracking-tight leading-none text-center"
         style={{
-          zIndex: 10,
-          fontSize: "clamp(2.4rem, 7vw, 4.5rem)",
-          filter: "drop-shadow(0 0 30px rgba(99, 102, 241, 0.4))",
-          maxWidth: "18ch",
+          fontSize: "clamp(2rem, 6vw, 3.25rem)",
+          filter: "drop-shadow(0 0 28px rgba(99, 102, 241, 0.35))",
         }}
+      >
+        EdgeBot
+      </h2>
+      <p
+        className="mt-4 font-welcome text-lg sm:text-xl font-semibold tracking-tight text-center max-w-md"
+        style={{ color: "rgba(226, 232, 240, 0.88)" }}
       >
         {greeting}
       </p>
+      <p className="mt-2 text-sm text-center max-w-sm" style={{ color: "rgba(255,255,255,0.28)" }}>
+        {"Tap a card or say what's on your mind below."}
+      </p>
+
+      <div className="mt-10 w-full grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3">
+        {CONVERSATION_STARTERS.map((item, i) => (
+          <button
+            key={item.send}
+            type="button"
+            onClick={() => onStarter(item.send)}
+            className={`starter-tile-animate group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[rgba(10,12,20,0.72)] px-4 py-4 text-left shadow-[0_8px_32px_rgba(0,0,0,0.38)] backdrop-blur-md transition-all duration-300 ease-out hover:-translate-y-1 hover:border-white/[0.16] hover:shadow-[0_16px_48px_rgba(99,102,241,0.14)] active:scale-[0.99] ${item.wide ? "sm:col-span-2" : ""}`}
+            style={{ animationDelay: `${i * 85}ms` }}
+          >
+            <span
+              className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-500/[0.06] via-transparent to-cyan-500/[0.04] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+              aria-hidden
+            />
+            <span
+              className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full opacity-75 transition-opacity group-hover:opacity-100"
+              style={accentBarStyle(item.accent)}
+              aria-hidden
+            />
+            <span className="relative flex items-start gap-3 pl-3.5">
+              <StarterIcon name={item.icon} />
+              <span className="min-w-0 flex-1">
+                <span
+                  className={`font-display font-semibold tracking-tight text-[#eef2ff] transition-colors group-hover:text-white block ${item.wide ? "text-base sm:text-lg" : "text-sm"}`}
+                >
+                  {item.title}
+                </span>
+                <span className="mt-1 block text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.32)" }}>
+                  {item.hint}
+                </span>
+              </span>
+              <svg
+                className="mt-1 h-4 w-4 shrink-0 text-white/20 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-indigo-300/70"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+            </span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -128,7 +288,6 @@ export default function Home() {
   const supabase = createClient();
 
   const [user, setUser] = useState<User | null>(null);
-  const [greeting, setGreeting] = useState(() => pickGreeting());
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -139,8 +298,14 @@ export default function Home() {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [sidebarRefresh, setSidebarRefresh] = useState(0);
 
+  const mainRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const activeConvRef = useRef<string | null>(null);
+  const stickToBottomRef = useRef(true);
+  const messagesLenRef = useRef(0);
+  messagesLenRef.current = messages.length;
+
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
 
   // Sync ref with state
   useEffect(() => {
@@ -151,7 +316,6 @@ export default function Home() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
-      setGreeting(pickGreeting(user?.user_metadata?.name ?? undefined));
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -162,18 +326,47 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const scrollToBottom = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  const handleMainScroll = useCallback(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const pinned = dist < 100;
+    stickToBottomRef.current = pinned;
+    setShowScrollToBottom(messagesLenRef.current > 0 && !pinned);
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, streamingContent, isLoading, scrollToBottom]);
+    const el = mainRef.current;
+    if (!el) return;
+    handleMainScroll();
+    el.addEventListener("scroll", handleMainScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleMainScroll);
+  }, [handleMainScroll]);
+
+  useLayoutEffect(() => {
+    if (messages.length === 0 && streamingContent === null) return;
+    if (!stickToBottomRef.current) return;
+    const streaming = streamingContent !== null || isLoading;
+    bottomRef.current?.scrollIntoView({ behavior: streaming ? "auto" : "smooth" });
+  }, [messages, streamingContent, isLoading]);
+
+  useLayoutEffect(() => {
+    const id = requestAnimationFrame(() => handleMainScroll());
+    return () => cancelAnimationFrame(id);
+  }, [messages, streamingContent, isLoading, handleMainScroll]);
+
+  const scrollToBottomSmooth = useCallback(() => {
+    stickToBottomRef.current = true;
+    setShowScrollToBottom(false);
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
 
   const loadConversation = useCallback(async (conversationId: string) => {
     setActiveConversationId(conversationId);
     setMessages([]);
     setStreamingContent(null);
+    stickToBottomRef.current = true;
+    setShowScrollToBottom(false);
 
     const { data } = await supabase
       .from("messages")
@@ -193,21 +386,25 @@ export default function Home() {
     }
   }, [supabase]);
 
-  const startNewChat = useCallback((userName?: string) => {
+  const startNewChat = useCallback(() => {
     setActiveConversationId(null);
     setMessages([]);
     setStreamingContent(null);
     setSidebarOpen(false);
-    setGreeting(pickGreeting(userName));
+    stickToBottomRef.current = true;
+    setShowScrollToBottom(false);
   }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    startNewChat(undefined);
+    startNewChat();
   };
 
   const sendMessage = useCallback(
     async (content: string) => {
+      stickToBottomRef.current = true;
+      setShowScrollToBottom(false);
+
       const userMessage: Message = {
         id: crypto.randomUUID(),
         role: "user",
@@ -362,13 +559,13 @@ export default function Home() {
           onClose={() => { setSidebarOpen(false); setSidebarVisible(false); }}
           activeConversationId={activeConversationId}
           onSelectConversation={loadConversation}
-          onNewChat={() => startNewChat(user.user_metadata?.name ?? undefined)}
+          onNewChat={() => startNewChat()}
           refreshTrigger={sidebarRefresh}
         />
       )}
 
       {/* Main column */}
-      <div className="flex flex-col flex-1 min-w-0">
+      <div className="flex flex-col flex-1 min-w-0 relative">
 
         {/* Header */}
         <header
@@ -395,8 +592,16 @@ export default function Home() {
               </button>
             )}
 
-            {/* Wordmark */}
-            <div>
+            {/* Wordmark — new chat / home */}
+            <button
+              type="button"
+              onClick={() => {
+                startNewChat();
+                router.push("/");
+              }}
+              className="text-left rounded-lg -mx-1 px-1 py-0.5 transition-opacity hover:opacity-[0.92] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgba(7,8,13,0.95)]"
+              aria-label="EdgeBot — start new chat"
+            >
               <h1 className="gradient-text font-display font-bold tracking-tight leading-none" style={{ fontSize: "1.05rem" }}>
                 EdgeBot
               </h1>
@@ -406,14 +611,14 @@ export default function Home() {
               >
                 LLaMA 3 · Groq
               </p>
-            </div>
+            </button>
           </div>
 
           {/* Right */}
           <div className="flex items-center gap-3">
             {messages.length > 0 && !isBusy && user && (
               <button
-                onClick={() => startNewChat(user.user_metadata?.name ?? undefined)}
+                onClick={() => startNewChat()}
                 className="text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-200 hidden sm:block"
                 style={{ color: "rgba(255,255,255,0.28)" }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.6)"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.04)"; }}
@@ -479,10 +684,10 @@ export default function Home() {
         </header>
 
         {/* Messages */}
-        <main className="flex-1 overflow-y-auto relative">
+        <main ref={mainRef} className="flex-1 overflow-y-auto min-h-0">
           <div className="max-w-3xl mx-auto px-4 py-8 min-h-full flex flex-col relative">
             {messages.length === 0 && !isBusy ? (
-              <EmptyState greeting={greeting} />
+              <WelcomeScreen onStarter={(text) => void sendMessage(text)} />
             ) : (
               <div className="flex-1">
                 {messages.map((msg) => (
@@ -508,6 +713,38 @@ export default function Home() {
             <div ref={bottomRef} />
           </div>
         </main>
+
+        {messages.length > 0 && showScrollToBottom && (
+          <button
+            type="button"
+            onClick={scrollToBottomSmooth}
+            className="absolute z-30 flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-medium transition-all duration-200 active:scale-95"
+            style={{
+              bottom: "6.75rem",
+              right: "1.25rem",
+              background: "rgba(11, 13, 22, 0.92)",
+              border: "1px solid rgba(99, 102, 241, 0.28)",
+              color: "rgba(199, 210, 254, 0.95)",
+              boxShadow: "0 4px 24px rgba(0, 0, 0, 0.45), 0 0 20px rgba(99, 102, 241, 0.12)",
+              backdropFilter: "blur(12px)",
+            }}
+            onMouseEnter={(e) => {
+              const el = e.currentTarget as HTMLButtonElement;
+              el.style.borderColor = "rgba(99, 102, 241, 0.45)";
+              el.style.background = "rgba(99, 102, 241, 0.12)";
+            }}
+            onMouseLeave={(e) => {
+              const el = e.currentTarget as HTMLButtonElement;
+              el.style.borderColor = "rgba(99, 102, 241, 0.28)";
+              el.style.background = "rgba(11, 13, 22, 0.92)";
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 opacity-90">
+              <path fillRule="evenodd" d="M12 2.25a.75.75 0 0 1 .75.75v16.19l6.22-6.22a.75.75 0 1 1 1.06 1.06l-7.5 7.5a.75.75 0 0 1-1.06 0l-7.5-7.5a.75.75 0 1 1 1.06-1.06l6.22 6.22V3a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
+            </svg>
+            To bottom
+          </button>
+        )}
 
         {/* Input */}
         <ChatInput onSend={sendMessage} disabled={isBusy} />

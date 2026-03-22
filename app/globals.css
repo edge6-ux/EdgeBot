@@ -57,6 +57,15 @@ body {
   animation: fadeUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Assistant markdown: nested code inside pre */
+.markdown-bot .markdown-pre code {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  font-size: inherit;
+  color: inherit;
+}
+
 /* Typing indicator */
 @keyframes typingBounce {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
@@ -112,4 +121,29 @@ body {
     0 0 24px rgba(99, 102, 241, 0.12),
     0 0 48px rgba(34, 211, 238, 0.05);
   border-color: rgba(99, 102, 241, 0.45) !important;
+}
+
+/* Welcome starter tiles */
+@keyframes starter-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.starter-tile-animate {
+  animation: starter-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .starter-tile-animate {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }

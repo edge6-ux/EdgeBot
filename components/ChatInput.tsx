@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+
+const MAX_LINES = 4;
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -11,19 +13,32 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
+  const resizeToContent = useCallback(() => {
     const ta = textareaRef.current;
     if (!ta) return;
+    const lineHeight = parseFloat(getComputedStyle(ta).lineHeight) || 22;
+    const maxScroll = Math.ceil(lineHeight * MAX_LINES);
+
     ta.style.height = "auto";
-    ta.style.height = Math.min(ta.scrollHeight, 160) + "px";
-  }, [value]);
+    const next = Math.min(ta.scrollHeight, maxScroll);
+    ta.style.height = `${next}px`;
+    ta.style.overflowY = ta.scrollHeight > maxScroll ? "auto" : "hidden";
+  }, []);
+
+  useEffect(() => {
+    resizeToContent();
+  }, [value, resizeToContent]);
 
   const handleSubmit = () => {
     const trimmed = value.trim();
     if (!trimmed || disabled) return;
     onSend(trimmed);
     setValue("");
-    if (textareaRef.current) textareaRef.current.style.height = "auto";
+    const ta = textareaRef.current;
+    if (ta) {
+      ta.style.height = "auto";
+      ta.style.overflowY = "hidden";
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -64,7 +79,6 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
               caretColor: "#818cf8",
             }}
           />
-          {/* placeholder color via global css isn't easy in Tailwind v4 inline — use a style tag trick */}
           <style>{`textarea::placeholder { color: rgba(255,255,255,0.18); }`}</style>
 
           <button
